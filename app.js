@@ -2,7 +2,10 @@ const express = require('express');
 const fetch = require("node-fetch");
 const bodyParaser = require("body-parser");
 const app = express();
-const port = 3000;
+const port = 4000;
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
+
 
 app.use(bodyParaser.json());
 
@@ -18,14 +21,39 @@ app.get('/', async(req, res)=>{
 
 
 
+// Supabase
+const supabaseUrl = process.env.SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// accomudation data fetch from Supabase
+app.get('/accommodation', async (req, res) =>{
+  console.log("accommodation 작동중")
+  try{
+    const { data, error } = await supabase
+    .from('accoms')
+    .select('*');
+    if (error) {
+      throw error;
+    }
+    
+    console.log("작동중", data);
+    res.json(data);
+
+  } catch(error) {
+    res.status(500).json({ error : error.message });
+  }
+});
+
+
+
+
 // 네이버 Social Media 로그인 
-var client_id = 'jZqFNn5osrqKbmxXtvZw';
-var client_secret = 'n5VpdIgn1r';
-var state = "RANDOM_STATE-anyword";
-var redirectURI = encodeURI("http://localhost:3000/callback");
-var api_url = "";
-
-
+const client_id = process.env.NODE_NAVER_API_ID;
+const client_secret = process.env.NODE_NAVER_API_SECRET;
+const state = "RANDOM_STATE-anyword";
+const redirectURI = encodeURI("http://localhost:3000/callback");
+const api_url = "";
 
 
 app.get("/callback", async function (req, res) {
