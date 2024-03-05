@@ -1,12 +1,19 @@
 const express = require('express');
 const fetch = require("node-fetch");
 const bodyParaser = require("body-parser");
+const cors = require('cors');
 const app = express();
 const port = 4000;
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
 
+const corsOptions = {
+  origin : 'https://port-0-pj3-server-dc9c2nlt7zv05q.sel5.cloudtype.app',
+  credentials : true
+}
+
+app.use(cors(corsOptions));
 app.use(bodyParaser.json());
 
 
