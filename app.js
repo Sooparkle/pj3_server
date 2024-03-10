@@ -5,7 +5,7 @@ const cors = require('cors');
 const app = express();
 const port = 4000;
 require('dotenv').config();
-const { createClient } = require('@supabase/supabase-js');
+const { createClient, SupabaseClient } = require('@supabase/supabase-js');
 
 
 // const corsOptions = {
@@ -35,7 +35,6 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 // accomudation data fetch from Supabase
 app.get('/accommodation', async (req, res) =>{
-  console.log("accommodation 작동중")
   try{
     const { data, error } = await supabase
     .from('accoms')
@@ -44,7 +43,7 @@ app.get('/accommodation', async (req, res) =>{
       throw error;
     }
     
-    console.log("작동중", data);
+    // console.log("작동중", data);
     res.json(data);
 
   } catch(error) {
@@ -53,17 +52,129 @@ app.get('/accommodation', async (req, res) =>{
 });
 
 
+app.post('/bookings', async(req, res)=>{
+// to convert month string to index
+  function monthStringToIndex(monthString) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months.indexOf(monthString);
+  }
+  try{
+    const bookingConfirm = req.body;
+    const { user :{ user_name, user_email }, bookingAccom, dates: { bookingStartDate, bookingEndDate }, status } = bookingConfirm;
+
+    const startDate = new Date(bookingStartDate[3], monthStringToIndex(bookingStartDate[1]), bookingStartDate[2]);
+    const endDate = new Date(bookingEndDate[3], monthStringToIndex(bookingEndDate[1]), bookingEndDate[2]);
+    
+    // 기간 동안 숙박료
+    const timeDifference = endDate.getTime() - startDate.getTime();
+    const stayingNights = Math.ceil(timeDifference / (1000 * 60 * 60 * 24)) - 1;
+
+
+    const bookingData = {
+      guest_name: user_name, 
+      guest_email: user_email, 
+      accom_id : bookingAccom.id,
+      accom_name: bookingAccom.accom_name,
+      accom_type: bookingAccom.accom_type,
+      total_price: stayingNights,
+      order_status: status,
+      guest_numbers: 1,
+      start_date: startDate,
+      end_date: endDate,
+    }
+
+    const { data, error } = await supabase
+    .from('bookings') //table name
+    .insert(bookingData);
+
+    if (error) {
+      console.error("Error is created during insert DB", error);
+      res.status(500).json({message : "Booking failed"});
+      return;
+    }
+
+    res.json({
+        message: "Booking created successfully!",
+    });
+  }
+  catch(error){
+    console.log("Unexpected error:", error);
+    res.status(500).json({message : "Booking failed."})
+  }
+
+});
+
+
+
+
+app.post('/bookings/result', (req, res) => {
+  const delayCall =() => {
+  try {
+    const contents = req.body;
+    const accomId = contents.accomId;
+    const userId = contents.user_email;
+
+
+    // Get current time with milliseconds removed
+    const now = new Date();
+    now.setSeconds(0, 0); // Remove seconds and milliseconds
+
+    const oneMinuteAgo = new Date(now.getTime() - (1000 * 60)); // Go back 1 minute
+
+console.log("작동")
+    const { data, error } =  supabase
+      .from('bookings')
+      .select('*') // Select all booking data
+      .eq('accom_id', accomId) // Filter by accommodation ID
+      // .eq('guest_email', userId) // Filter by user ID (assuming user ID is stored as email)
+      // .gte('created_at', oneMinuteAgo.toISOString()) // Filter by created_at greater than or equal to 1 minute ago
+      // .lte('created_at', new Date().toISOString()) // Filter by created_at less than or equal to current time
+      // .order('start_date', { ascending: false }) // Order by start date descending
+      // .limit(1) // Get only the first record (most recent)
+      // .single()
+      // .execute();
+
+      console.log("작동 data",data)
+    if (error) {
+      console.error("Error retrieving booking data:", error);
+      res.status(500).json({ message: "Failed to retrieve booking" });
+      return;
+    }
+
+    if (!data) {
+      // Handle case where no booking is found
+      res.status(404).json({ message: "No booking found for this accommodation and user within the last minute" });
+      return;
+    }
+
+    res.json(data); // Return the retrieved booking data
+    console.log("완료", data);
+  
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    res.status(500).json({ message: "Failed to retrieve booking" });
+  }
+}
+  setTimeout(delayCall, 10000)
+
+});
+
+
+
+
 
 
 // 네이버 Social Media 로그인 
 const client_id = process.env.NODE_NAVER_API_ID;
 const client_secret = process.env.NODE_NAVER_API_SECRET;
 const state = "RANDOM_STATE-anyword";
-const redirectURI = encodeURI("http://localhost:3000/callback");
+const redirectURI = encodeURI("http://localhost:3000/mypage");
 const api_url = "";
 
 
+
 app.get("/callback", async function (req, res) {
+
   const code = req.query.code;
   const state = req.query.state;
   const api_url =
@@ -91,22 +202,40 @@ app.get("/callback", async function (req, res) {
       const { access_token } = tokenRequest;
       const apiUrl = "https://openapi.naver.com/v1/nid/me";
   
-      const data = await fetch(apiUrl, {
+      const naverdata = await fetch(apiUrl, {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
       });
   
-      const userData = await data.json();
-  
-      //사용자 정보 콘솔로 받아오기 -> DB에 저장해야 합니다.
-      console.log("userData:", userData);
+      const userData = await naverdata.json();
+
+      const { response :{ name , email }} = userData;
+      const naverAuth = {
+        name,
+        email
+      }
+
+      const { data, error } = await supabase
+      .from('users')
+      .insert(naverAuth);
+
+      if(error) {
+        console.error("Error is created during insert DB", error);
+        res.status(500).json({message : "Naver 로그인 실패"});
+        return;
+      }
+
+      console.log("Insert has been successful");
+      res.redirect("http://localhost:3000/mypage?loggedIn=true");
+
     }
   
-    return res.send("DB에 저장하고 랜드페이지로 redirect ");
   });
 
 
 app.listen(port, ()=>{
   console.log(`http://localhost:${port} Let get the hell` )
 })
+
+
