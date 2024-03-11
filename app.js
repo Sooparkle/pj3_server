@@ -216,6 +216,23 @@ app.get("/callback", async function (req, res) {
         email
       }
 
+      // Check for existing user with the same name and email
+      const { data: existingUser, error: userError } = await supabase
+        .from('users')
+        .select('*') // Select all user data
+        .eq('email', email)
+        .eq('name', name)  // Add check for name
+        .single();
+
+        const redirectUrl = `/mypage?loggedIn=true`; // Base URL for redirect
+
+      if (existingUser) {
+        console.log("User with matching name and email already exists:", existingUser);
+        redirectUrl += '&existingUser=true'; // Add existingUser param
+        return;
+      }
+
+      // Insert user if unique
       const { data, error } = await supabase
       .from('users')
       .insert(naverAuth);
@@ -225,14 +242,11 @@ app.get("/callback", async function (req, res) {
         res.status(500).json({message : "Naver 로그인 실패"});
         return;
       }
-
+      res.json({ message : "Naver 로그인에 성공하였습니다!" });
       console.log("Insert has been successful");
-      res.redirect("http://localhost:3000/mypage?loggedIn=true");
-
     }
   
-  });
-
+});
 
 app.listen(port, ()=>{
   console.log(`http://localhost:${port} Let get the hell` )
