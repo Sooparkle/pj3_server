@@ -58,9 +58,28 @@ app.post('/bookings', async(req, res)=>{
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months.indexOf(monthString);
   }
+  // console.log("Booking ", bookingConfirm)
   try{
     const bookingConfirm = req.body;
-    const { user :{ user_name, user_email }, bookingAccom, dates: { bookingStartDate, bookingEndDate }, status } = bookingConfirm;
+
+    const { 
+      user :{ 
+        user_name, 
+        user_email 
+      }, 
+      bookingAccom,
+      dates: { 
+        bookingStartDate, 
+        bookingEndDate
+      },
+      extraNumber:{
+        bookingAdult,
+        bookingChild,
+      },
+      totalNumbers,
+      status,
+      totalPrice,
+    } = bookingConfirm;
 
     const startDate = new Date(bookingStartDate[3], monthStringToIndex(bookingStartDate[1]), bookingStartDate[2]);
     const endDate = new Date(bookingEndDate[3], monthStringToIndex(bookingEndDate[1]), bookingEndDate[2]);
@@ -68,7 +87,6 @@ app.post('/bookings', async(req, res)=>{
     // 기간 동안 숙박료
     const timeDifference = endDate.getTime() - startDate.getTime();
     const stayingNights = Math.ceil(timeDifference / (1000 * 60 * 60 * 24)) - 1;
-
 
     const bookingData = {
       guest_name: user_name, 
@@ -78,9 +96,13 @@ app.post('/bookings', async(req, res)=>{
       accom_type: bookingAccom.accom_type,
       total_price: stayingNights,
       order_status: status,
-      guest_numbers: 1,
+      extra_adult : bookingAdult,
+      extra_child : bookingChild,
+      guest_numbers: totalNumbers,
       start_date: startDate,
       end_date: endDate,
+      total_price : totalPrice,
+
     }
 
     const { data, error } = await supabase
@@ -93,12 +115,14 @@ app.post('/bookings', async(req, res)=>{
       return;
     }
 
+    // console.log("insert DATA", data)
     res.json({
         message: "Booking created successfully!",
+        data
     });
   }
   catch(error){
-    console.log("Unexpected error:", error);
+    console.log("Unexpected error:", error.message);
     res.status(500).json({message : "Booking failed."})
   }
 
@@ -121,7 +145,6 @@ app.post('/bookings/result', (req, res) => {
 
     const oneMinuteAgo = new Date(now.getTime() - (1000 * 60)); // Go back 1 minute
 
-console.log("작동")
     const { data, error } =  supabase
       .from('bookings')
       .select('*') // Select all booking data
@@ -134,7 +157,6 @@ console.log("작동")
       // .single()
       // .execute();
 
-      console.log("작동 data",data)
     if (error) {
       console.error("Error retrieving booking data:", error);
       res.status(500).json({ message: "Failed to retrieve booking" });
@@ -248,8 +270,77 @@ app.get("/callback", async function (req, res) {
   
 });
 
-app.listen(port, ()=>{
-  console.log(`http://localhost:${port} Let get the hell` )
+
+
+
+app.get('/search', async(req, res) =>{
+  try{
+
+    const { keyword } = req.query;
+    if(!keyword){
+      throw new Error('Missing search keyword');
+    }
+
+    const { data, error } = await supabase
+    .from('accoms')
+    .select('*')
+    .like('description', `%${keyword}%`)
+
+    res.json({
+      message : 'Search results', data
+    });
+  }
+  catch(error) {
+    console.error ('Search failed', error.message)
+    res.status(400).json({error : 'Search failed'})
+  }
 })
 
 
+
+// accommodation login area
+app.post("/login", async (req, res)=>{
+
+  try{
+    const { email, password } = req.body;
+
+    const { data,  error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .single()
+
+    if(error){
+      throw error;
+    }
+
+    if( !data || data.password !== password)
+    throw new Error('invailed credentials');
+
+    const { data : bookingsData, error : bookingError } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('guest_email', email)
+
+    if(bookingError) {throw bookingError}
+
+    res.json({
+      message : 'Login Seccessful',
+      email : data.email,
+      name : data.name,
+      image : data.image,
+      bookings : bookingsData
+  });
+
+  }
+  catch(error){
+    console.error('Login Failed', error.message) 
+    res.status(401).json({ error : 'Loging failed'})
+
+  }
+})
+
+
+app.listen(port, ()=>{
+  console.log(`http://localhost:${port} Let get the hell` )
+})
