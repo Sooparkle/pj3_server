@@ -118,7 +118,7 @@ app.post('/bookings', async(req, res)=>{
     // console.log("insert DATA", data)
     res.json({
         message: "Booking created successfully!",
-        data
+        // data
     });
   }
   catch(error){
@@ -190,7 +190,7 @@ app.post('/bookings/result', (req, res) => {
 const client_id = process.env.NODE_NAVER_API_ID;
 const client_secret = process.env.NODE_NAVER_API_SECRET;
 const state = "RANDOM_STATE-anyword";
-const redirectURI = encodeURI("http://localhost:3000/mypage");
+const redirectURI = encodeURI("http://localhost:3000/callback");
 const api_url = "";
 
 
@@ -246,18 +246,20 @@ app.get("/callback", async function (req, res) {
         .eq('name', name)  // Add check for name
         .single();
 
-        const redirectUrl = `/mypage?loggedIn=true`; // Base URL for redirect
+      //   const redirectUrl = `/mypage?loggedIn=true`; // Base URL for redirect
 
-      if (existingUser) {
-        console.log("User with matching name and email already exists:", existingUser);
-        redirectUrl += '&existingUser=true'; // Add existingUser param
-        return;
-      }
+      // if (existingUser) {
+      //   console.log("User with matching name and email already exists:", existingUser);
+      //   redirectUrl += '&existingUser=true'; // Add existingUser param
+      //   return;
+      // }
 
       // Insert user if unique
       const { data, error } = await supabase
       .from('users')
       .insert(naverAuth);
+
+      res.redirect('http://localhost:3000/mypage');
 
       if(error) {
         console.error("Error is created during insert DB", error);
