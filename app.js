@@ -190,7 +190,7 @@ app.post('/bookings/result', (req, res) => {
 const client_id = process.env.NODE_NAVER_API_ID;
 const client_secret = process.env.NODE_NAVER_API_SECRET;
 const state = "RANDOM_STATE-anyword";
-const redirectURI = encodeURI("https://project3-accom.pages.dev/callback");
+const redirectURI = encodeURI("https://port-0-pj3-server-dc9c2nlt7zv05q.sel5.cloudtype.app/callback");
 const api_url = "";
 
 
