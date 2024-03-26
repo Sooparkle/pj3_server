@@ -115,10 +115,8 @@ app.post('/bookings', async(req, res)=>{
       return;
     }
 
-    // console.log("insert DATA", data)
     res.json({
-        message: "Booking created successfully!",
-        // data
+        message: "Booking created successfully!"
     });
   }
   catch(error){
