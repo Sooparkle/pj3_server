@@ -184,7 +184,7 @@ app.post('/bookings/result', (req, res) => {
 
 
 
-// 네이버 Social Media 로그인 
+// Naver Social Media Login 
 const client_id = process.env.NODE_NAVER_API_ID;
 const client_secret = process.env.NODE_NAVER_API_SECRET;
 const state = "RANDOM_STATE-anyword";
@@ -195,6 +195,10 @@ const api_url = "";
 
 
 app.get("/callback", async function (req, res) {
+
+console.log("data 들어옴")
+  // console.log("Nave API login req originalURL", req.originalUrl);
+  // console.log("Nave API login req route", req.route);
 
   const code = req.query.code;
   const state = req.query.state;
@@ -238,12 +242,12 @@ app.get("/callback", async function (req, res) {
       }
 
       // Check for existing user with the same name and email
-      const { data: existingUser, error: userError } = await supabase
-        .from('users')
-        .select('*') // Select all user data
-        .eq('email', email)
-        .eq('name', name)  // Add check for name
-        .single();
+      // const { data: existingUser, error: userError } = await supabase
+      //   .from('users')
+      //   .select('*') 
+      //   .eq('email', email)
+      //   .eq('name', name)
+      //   .single();
 
       //   const redirectUrl = `/mypage?loggedIn=true`; // Base URL for redirect
 
@@ -263,10 +267,10 @@ app.get("/callback", async function (req, res) {
         res.status(500).json({message : "Naver 로그인 실패"});
         return;
       }
+      // redirectURI(`http://localhost:3000/${originalRul}`)
       res.json({ message : "Naver 로그인에 성공하였습니다!" });
       console.log("Insert has been successful");
 
-      // redirectURI()
     }
   
 });
@@ -377,8 +381,8 @@ app.post('/library', async (req, res)=>{
   
     try{
       const word = req.body.keyword
-      const start = req.body.sendStartDate
-      const end = req.body.sendEndDate
+      const start = req.body.sendEndDate
+      const end = req.body.sendStartDate
 
       for(let i = 0; i < library.length; i++){
         if(word ==library[i].libName){
