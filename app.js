@@ -139,20 +139,15 @@ app.post('/bookings/result', (req, res) => {
 
     // Get current time with milliseconds removed
     const now = new Date();
-    now.setSeconds(0, 0); // Remove seconds and milliseconds
+    now.setSeconds(0, 0); 
 
-    const oneMinuteAgo = new Date(now.getTime() - (1000 * 60)); // Go back 1 minute
+    const oneMinuteAgo = new Date(now.getTime() - (1000 * 60)); 
 
     const { data, error } =  supabase
       .from('bookings')
       .select('*') // Select all booking data
       .eq('accom_id', accomId) // Filter by accommodation ID
-      // .eq('guest_email', userId) // Filter by user ID (assuming user ID is stored as email)
-      // .gte('created_at', oneMinuteAgo.toISOString()) // Filter by created_at greater than or equal to 1 minute ago
-      // .lte('created_at', new Date().toISOString()) // Filter by created_at less than or equal to current time
-      // .order('start_date', { ascending: false }) // Order by start date descending
-      // .limit(1) // Get only the first record (most recent)
-      // .single()
+
       // .execute();
 
     if (error) {
@@ -196,7 +191,6 @@ const api_url = "";
 
 app.get("/callback", async function (req, res) {
 
-console.log("data 들어옴")
   // console.log("Nave API login req originalURL", req.originalUrl);
   // console.log("Nave API login req route", req.route);
 
@@ -387,13 +381,11 @@ app.post('/library', async (req, res)=>{
       for(let i = 0; i < library.length; i++){
         if(word ==library[i].libName){
           const selectedCode = library[i].value;
-          console.log("Try 작동")
-          
           const libraryApi = new URL('https://data4library.kr/api/loanItemSrchByLib?');
           libraryApi.searchParams.set("authKey", '43d7efdc5d7f99a3be907ecac62d3212026fb810e793f19e56fb0b5a390c93f8')
           libraryApi.searchParams.set("dtl_region", selectedCode);
-          libraryApi.searchParams.set("startDt", start); //2023-01-01
-          libraryApi.searchParams.set("endDt", end) //2023-12-31
+          libraryApi.searchParams.set("startDt", start);//2023-12-31  
+          libraryApi.searchParams.set("endDt", end) //2023-01-01
           libraryApi.searchParams.set("pageSize", "10");
           libraryApi.searchParams.set("format", 'json');
   
@@ -405,7 +397,7 @@ app.post('/library', async (req, res)=>{
           };
   
           const response = await fetch(libraryApi.toString(), options);
-  
+          console.log("response 지남")
           if(!response.ok){
             // throw new Error(`Library Fetch failed at SearchForm ${response.status}`);
             throw (`Library Fetch failed at SearchForm`);
