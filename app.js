@@ -29,9 +29,13 @@ app.get('/', async(req, res)=>{
 
 
 // Supabase
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_KEY
-const supabase = createClient(supabaseUrl, supabaseKey)
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+
+
 
 // accomudation data fetch from Supabase
 app.get('/accommodation', async (req, res) =>{
