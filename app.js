@@ -9,9 +9,11 @@ const { createClient, SupabaseClient } = require('@supabase/supabase-js');
 
 
 // const corsOptions = {
-//   origin : 'https://port-0-pj3-server-dc9c2nlt7zv05q.sel5.cloudtype.app',
-//   credentials : true
-// }
+//   // origin : 'https://port-0-pj3-server-dc9c2nlt7zv05q.sel5.cloudtype.app',
+//   origin : 'http://localhost:3000/',
+//   method: 'GET, POST',
+//   allowedHeaders : "Content-Type, Authorization"
+// };
 
 app.use(cors());
 app.use(bodyParaser.json());
@@ -275,25 +277,6 @@ app.get("/callback", async function (req, res) {
 
 
 
-app.get("/initial", async(req, res)=>{
-
-  const { data, error } = await supabase
-  .from('accoms')
-  .select('*')
-
-  if(error){
-    console.error(`Failed to get Accommodation Data ${error}`)
-    res.status(500).json({error : "숙박정볼를 가져올 수 없는 상태 입니다."})
-    return
-  }
-  
-  res.json(data)
-  console.log("initial", data)
-  
-
-})
-
-
 
 app.get('/search', async(req, res) =>{
 
@@ -313,15 +296,25 @@ app.get('/search', async(req, res) =>{
       String(value).toLowerCase().includes(keyword.toLowerCase())
     )
   );
+  
 
+const filteredDataNumber = Object.entries(filteredData).length;
+  console.log("FilteredData", filteredDataNumber);
+  
   if (error) {
     console.error('Failed to get accoms data:', error.message);
     res.status(500).json({ error: 'Failed to get accoms data' });
     return;  // Exit the function if there's an error
   }
 
-  res.json({ message: 'Accom data retrieved successfully', data: filteredData });
-  console.log("working", filteredData)
+  if (filteredDataNumber === 0) {
+    res.json({ message: "검색 자료가 없습니다. 다른 검색으로 검색해 보세요." });
+      return
+  } else {
+    res.json({ message: 'Accom data retrieved successfully', data: filteredData });
+  }
+
+  // res.json({ message: 'Accom data retrieved successfully', data: filteredData });
   }
   catch(error) {
     console.error("sever has got an issue", error);
