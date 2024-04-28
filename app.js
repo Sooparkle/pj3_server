@@ -275,28 +275,60 @@ app.get("/callback", async function (req, res) {
 
 
 
+app.get("/initial", async(req, res)=>{
+
+  const { data, error } = await supabase
+  .from('accoms')
+  .select('*')
+
+  if(error){
+    console.error(`Failed to get Accommodation Data ${error}`)
+    res.status(500).json({error : "숙박정볼를 가져올 수 없는 상태 입니다."})
+    return
+  }
+  
+  res.json(data)
+  console.log("initial", data)
+  
+
+})
+
+
 
 app.get('/search', async(req, res) =>{
+
+  const { keyword } = req.query;
   try{
+  if(!keyword){
+    throw ('Missing search keyword');
+    
+  }
 
-    const { keyword } = req.query;
-    if(!keyword){
-      throw new Error('Missing search keyword');
-    }
+  const { data, error } = await supabase
+  .from('accoms')
+  .select('*')
 
-    const { data, error } = await supabase
-    .from('accoms')
-    .select('*')
-    .like('description', `%${keyword}%`)
+  const filteredData = data.filter(accom =>
+    Object.values(accom).some(value =>
+      String(value).toLowerCase().includes(keyword.toLowerCase())
+    )
+  );
 
-    res.json({
-      message : 'Search results', data
-    });
+  if (error) {
+    console.error('Failed to get accoms data:', error.message);
+    res.status(500).json({ error: 'Failed to get accoms data' });
+    return;  // Exit the function if there's an error
+  }
+
+  res.json({ message: 'Accom data retrieved successfully', data: filteredData });
+  console.log("working", filteredData)
   }
   catch(error) {
-    console.error ('Search failed', error.message)
-    res.status(400).json({error : 'Search failed'})
+    console.error("sever has got an issue", error);
+    res.json({message : "검색 내용이 없습니다."});
   }
+
+
 })
 
 
